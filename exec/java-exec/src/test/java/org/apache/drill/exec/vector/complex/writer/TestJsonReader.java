@@ -652,4 +652,28 @@ public class TestJsonReader extends BaseTestQuery {
     }
   }
 
+  @Test
+  public void testFlattenOnEmptyList() throws Exception {
+    try {
+      String allTextModeOption = "alter session set `store.json.all_text_mode` = %s";
+      String query = "SELECT FLATTEN(t.a.b.c) AS c FROM cp.`jsoninput/flattenOnEmptyList.json` t";
+
+      testBuilder()
+        .sqlQuery(query)
+        .unOrdered()
+        .optionSettingQueriesForTestQuery(String.format(allTextModeOption, true))
+        .expectsEmptyResultSet()
+        .go();
+
+      testBuilder()
+        .sqlQuery(query)
+        .unOrdered()
+        .optionSettingQueriesForTestQuery(String.format(allTextModeOption, false))
+        .expectsEmptyResultSet()
+        .go();
+
+    } finally {
+      testNoResult("alter session reset `store.json.all_text_mode`");
+    }
+  }
 }

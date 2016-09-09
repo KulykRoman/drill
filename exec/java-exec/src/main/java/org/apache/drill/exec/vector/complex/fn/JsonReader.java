@@ -31,6 +31,7 @@ import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.store.easy.json.reader.BaseJsonProcessor;
 import org.apache.drill.exec.vector.complex.fn.VectorOutput.ListVectorOutput;
 import org.apache.drill.exec.vector.complex.fn.VectorOutput.MapVectorOutput;
+import org.apache.drill.exec.vector.complex.impl.SingleListWriter;
 import org.apache.drill.exec.vector.complex.writer.BaseWriter;
 import org.apache.drill.exec.vector.complex.writer.BaseWriter.ComplexWriter;
 import org.apache.drill.exec.vector.complex.writer.BaseWriter.ListWriter;
@@ -132,8 +133,16 @@ public class JsonReader extends BaseJsonProcessor {
       if (emptyStatus.get(j)) {
         if (allTextMode) {
           fieldWriter.varChar(fieldPath.getNameSegment().getPath());
+          ListWriter listWriter = fieldWriter.list(fieldPath.getNameSegment().getPath());
+          if (listWriter instanceof SingleListWriter) {
+            listWriter.varChar();
+          }
         } else {
           fieldWriter.integer(fieldPath.getNameSegment().getPath());
+          ListWriter listWriter = fieldWriter.list(fieldPath.getNameSegment().getPath());
+          if (listWriter instanceof SingleListWriter) {
+            listWriter.integer();
+          }
         }
       }
     }
