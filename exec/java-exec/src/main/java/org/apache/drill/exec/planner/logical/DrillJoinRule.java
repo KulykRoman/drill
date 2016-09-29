@@ -63,13 +63,14 @@ public class DrillJoinRule extends RelOptRule {
 
     List<Integer> leftKeys = Lists.newArrayList();
     List<Integer> rightKeys = Lists.newArrayList();
+    List<Boolean> filterNulls = Lists.newArrayList();
     int numLeftFields = convertedLeft.getRowType().getFieldCount();
 
     boolean addFilter = false;
     RexNode origJoinCondition = join.getCondition();
     RexNode newJoinCondition = origJoinCondition;
 
-    RexNode remaining = RelOptUtil.splitJoinCondition(convertedLeft, convertedRight, origJoinCondition, leftKeys, rightKeys);
+    RexNode remaining = RelOptUtil.splitJoinCondition(convertedLeft, convertedRight, origJoinCondition, leftKeys, rightKeys, filterNulls);
     boolean hasEquijoins = (leftKeys.size() == rightKeys.size() && leftKeys.size() > 0) ? true : false;
 
     // If the join involves equijoins and non-equijoins, then we can process the non-equijoins through

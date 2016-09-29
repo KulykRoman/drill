@@ -96,7 +96,7 @@ public class JoinUtils {
      * @return          Return true if the given relNode contains Cartesian join.
      *                  Otherwise, return false
      */
-  public static boolean checkCartesianJoin(RelNode relNode, List<Integer> leftKeys, List<Integer> rightKeys) {
+  public static boolean checkCartesianJoin(RelNode relNode, List<Integer> leftKeys, List<Integer> rightKeys, List<Boolean> filterNulls) {
     if (relNode instanceof Join) {
       leftKeys.clear();
       rightKeys.clear();
@@ -105,7 +105,7 @@ public class JoinUtils {
       RelNode left = joinRel.getLeft();
       RelNode right = joinRel.getRight();
 
-      RexNode remaining = RelOptUtil.splitJoinCondition(left, right, joinRel.getCondition(), leftKeys, rightKeys);
+      RexNode remaining = RelOptUtil.splitJoinCondition(left, right, joinRel.getCondition(), leftKeys, rightKeys, filterNulls);
       if(joinRel.getJoinType() == JoinRelType.INNER) {
         if(leftKeys.isEmpty() || rightKeys.isEmpty()) {
           return true;
@@ -118,7 +118,7 @@ public class JoinUtils {
     }
 
     for (RelNode child : relNode.getInputs()) {
-      if(checkCartesianJoin(child, leftKeys, rightKeys)) {
+      if(checkCartesianJoin(child, leftKeys, rightKeys, filterNulls)) {
         return true;
       }
     }
@@ -249,13 +249,13 @@ public class JoinUtils {
   }
 
   public static JoinCategory getJoinCategory(RelNode left, RelNode right, RexNode condition,
-      List<Integer> leftKeys, List<Integer> rightKeys) {
+      List<Integer> leftKeys, List<Integer> rightKeys, List<Boolean> filterNulls) {
     if (condition.isAlwaysTrue()) {
       return JoinCategory.CARTESIAN;
     }
     leftKeys.clear();
     rightKeys.clear();
-    RexNode remaining = RelOptUtil.splitJoinCondition(left, right, condition, leftKeys, rightKeys);
+    RexNode remaining = RelOptUtil.splitJoinCondition(left, right, condition, leftKeys, rightKeys, filterNulls);
 
     if (!remaining.isAlwaysTrue() || (leftKeys.size() == 0 || rightKeys.size() == 0) ) {
       // for practical purposes these cases could be treated as inequality
