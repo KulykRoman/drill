@@ -414,4 +414,24 @@ public class TestJoinNullable extends BaseTestQuery{
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
 
+  @Test
+  public void testNullEqualInWhereCondition() throws Exception {
+    testBuilder()
+        .sqlQuery("SELECT * FROM "
+            + "cp.`jsoninput/nullableOrdered1.json` t1, "
+            + "cp.`jsoninput/nullableOrdered2.json` t2 "
+            + "WHERE t1.key = t2.key OR (t1.key IS NULL AND t2.key IS NULL)")
+        .unOrdered()
+        .baselineColumns("key", "data", "data0", "key0")
+        .baselineValues(null, "L_null_1", "R_null_1", null)
+        .baselineValues(null, "L_null_2", "R_null_1", null)
+        .baselineValues("A", "L_A_1", "R_A_1", "A")
+        .baselineValues("A", "L_A_2", "R_A_1", "A")
+        .baselineValues(null, "L_null_1", "R_null_2", null)
+        .baselineValues(null, "L_null_2", "R_null_2", null)
+        .baselineValues(null, "L_null_1", "R_null_3", null)
+        .baselineValues(null, "L_null_2", "R_null_3", null)
+        .go();
+  }
+
 }
