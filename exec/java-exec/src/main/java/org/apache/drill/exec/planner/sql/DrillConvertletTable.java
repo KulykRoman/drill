@@ -38,6 +38,8 @@ public class DrillConvertletTable implements SqlRexConvertletTable{
   static {
     // Use custom convertlet for extract function
     map.put(SqlStdOperatorTable.EXTRACT, DrillExtractConvertlet.INSTANCE);
+    map.put(SqlStdOperatorTable.IS_DISTINCT_FROM, DrillDistinctFromConvertlet.INSTANCE);
+    map.put(SqlStdOperatorTable.IS_NOT_DISTINCT_FROM, DrillDistinctFromConvertlet.INSTANCE);
     map.put(SqlStdOperatorTable.AVG, new DrillAvgVarianceConvertlet(SqlAvgAggFunction.Subtype.AVG));
     map.put(SqlStdOperatorTable.STDDEV_POP, new DrillAvgVarianceConvertlet(SqlAvgAggFunction.Subtype.STDDEV_POP));
     map.put(SqlStdOperatorTable.STDDEV_SAMP, new DrillAvgVarianceConvertlet(SqlAvgAggFunction.Subtype.STDDEV_SAMP));
