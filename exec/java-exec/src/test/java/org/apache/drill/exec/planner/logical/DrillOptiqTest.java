@@ -55,8 +55,9 @@ public class DrillOptiqTest {
       ImmutableList<RexFieldCollation> e = ImmutableList.copyOf(new RexFieldCollation[0]);
 
       // create a dummy RexOver object.
+      //Changes to support Calcite 1.13.
       RexNode window = rex.makeOver(anyType, SqlStdOperatorTable.AVG, emptyList, emptyList, e, null, null, true,
-          false, false);
+          false, false, false);
       DrillOptiq.toDrill(null, (RelNode) null, window);
     } catch (UserException e) {
       if (e.getMessage().contains(DrillOptiq.UNSUPPORTED_REX_NODE_ERROR)) {

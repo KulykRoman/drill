@@ -28,11 +28,13 @@ import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.physical.PhysicalPlan;
 import org.apache.drill.exec.planner.sql.handlers.AbstractSqlHandler;
 import org.apache.drill.exec.planner.sql.handlers.DefaultSqlHandler;
+import org.apache.drill.exec.planner.sql.handlers.DescribeTableHandler;
 import org.apache.drill.exec.planner.sql.handlers.ExplainHandler;
 import org.apache.drill.exec.planner.sql.handlers.SetOptionHandler;
 import org.apache.drill.exec.planner.sql.handlers.SqlHandlerConfig;
 import org.apache.drill.exec.planner.sql.parser.DrillSqlCall;
 import org.apache.drill.exec.planner.sql.parser.SqlCreateTable;
+import org.apache.drill.exec.planner.sql.parser.SqlDescribeTable;
 import org.apache.drill.exec.testing.ControlsInjector;
 import org.apache.drill.exec.testing.ControlsInjectorFactory;
 import org.apache.drill.exec.util.Pointer;
@@ -112,6 +114,13 @@ public class DrillSqlWorker {
     case SET_OPTION:
       handler = new SetOptionHandler(context);
       break;
+    //Changes to support Calcite 1.13.
+    case DESCRIBE_TABLE:
+      if (sqlNode instanceof org.apache.calcite.sql.SqlDescribeTable) {
+        //handler = new DescribeTableHandler(config);
+        handler = ((DrillSqlCall)sqlNode).getSqlHandler(config);
+        break;
+      }
     case OTHER:
       if(sqlNode instanceof SqlCreateTable) {
         handler = ((DrillSqlCall)sqlNode).getSqlHandler(config, textPlan);

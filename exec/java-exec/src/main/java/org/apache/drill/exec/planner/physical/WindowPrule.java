@@ -154,15 +154,16 @@ public class WindowPrule extends Prule {
 
           newOperandsOfWindowFunction.add(operand);
         }
-
+        //Changes to support Calcite 1.13.
         aggCall = new Window.RexWinAggCall(
             (SqlAggFunction) aggCall.getOperator(),
             aggCall.getType(),
             newOperandsOfWindowFunction,
-            aggCall.ordinal);
+            aggCall.ordinal,
+            aggCall.distinct);
 
         newWinAggCalls.add(new Window.RexWinAggCall(
-            (SqlAggFunction)aggCall.getOperator(), aggCall.getType(), aggCall.getOperands(), aggOrd.i)
+            (SqlAggFunction)aggCall.getOperator(), aggCall.getType(), aggCall.getOperands(), aggOrd.i, aggCall.distinct)
         );
       }
 
