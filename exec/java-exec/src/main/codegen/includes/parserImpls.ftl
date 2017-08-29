@@ -118,7 +118,7 @@ SqlNode SqlDescribeTable() :
         E()
     )
     {
-        return new SqlDescribeTable(pos, table, column, columnPattern);
+        return new org.apache.drill.exec.planner.sql.parser.SqlDescribeTable(pos, table, column, columnPattern);
     }
 }
 
@@ -158,7 +158,7 @@ SqlNodeList ParseRequiredFieldList(String relType) :
 }
 {
     <LPAREN>
-    fieldList = SimpleIdentifierCommaList()
+    fieldList = ParenthesizedCompoundIdentifierList()
     <RPAREN>
     {
         for(SqlNode node : fieldList)
@@ -298,7 +298,7 @@ SqlNode SqlDescribeSchema() :
    <DESCRIBE> { pos = getPos(); }
    (<SCHEMA> | <DATABASE>) { schema = CompoundIdentifier(); }
    {
-        return new SqlDescribeSchema(pos, schema);
+        return new org.apache.drill.exec.planner.sql.parser.SqlDescribeSchema(pos, schema);
    }
 }
 
@@ -341,3 +341,22 @@ SqlNode SqlDropFunction() :
        return new SqlDropFunction(pos, jar);
    }
 }
+
+<#if !parser.includeCompoundIdentifier >
+/**
+* Parses a comma-separated list of simple identifiers.
+*/
+SqlNodeList ParenthesizedCompoundIdentifierList() :
+{
+    List<SqlIdentifier> list = new ArrayList<SqlIdentifier>();
+    SqlIdentifier id;
+}
+{
+    id = SimpleIdentifier() {list.add(id);}
+    (
+   <COMMA> id = SimpleIdentifier() {list.add(id);}) *
+    {
+       return new SqlNodeList(list, getPos());
+    }
+}
+</#if>
