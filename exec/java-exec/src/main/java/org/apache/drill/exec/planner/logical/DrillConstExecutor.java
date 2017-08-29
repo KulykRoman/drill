@@ -20,6 +20,10 @@ package org.apache.drill.exec.planner.logical;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import io.netty.buffer.DrillBuf;
+import org.apache.calcite.rex.RexExecutor;
+import org.apache.calcite.util.DateString;
+import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.TimestampString;
 import org.apache.calcite.rel.RelNode;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.expression.ErrorCollectorImpl;
@@ -79,7 +83,8 @@ import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.List;
 
-public class DrillConstExecutor implements RelOptPlanner.Executor {
+//Changes to support Calcite 1.13.
+public class DrillConstExecutor implements RexExecutor {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillConstExecutor.class);
 
   private final PlannerSettings plannerSettings;
@@ -203,7 +208,8 @@ public class DrillConstExecutor implements RelOptPlanner.Executor {
               Calendar value = (materializedExpr.getMajorType().getMode() == TypeProtos.DataMode.OPTIONAL) ?
                 new DateTime(((NullableDateHolder) output).value, DateTimeZone.UTC).toCalendar(null) :
                 new DateTime(((DateHolder) output).value, DateTimeZone.UTC).toCalendar(null);
-              return rexBuilder.makeLiteral(value,
+              //Changes to support Calcite 1.13: quick fix for 205af813 commit in Calcite
+              return rexBuilder.makeLiteral(DateString.fromCalendarFields(value),
                 TypeInferenceUtils.createCalciteTypeWithNullability(typeFactory, SqlTypeName.DATE, newCall.getType().isNullable()), false);
             }
             case DECIMAL9: {
@@ -282,14 +288,16 @@ public class DrillConstExecutor implements RelOptPlanner.Executor {
               Calendar value = (materializedExpr.getMajorType().getMode() == TypeProtos.DataMode.OPTIONAL) ?
                 new DateTime(((NullableTimeHolder) output).value, DateTimeZone.UTC).toCalendar(null) :
                 new DateTime(((TimeHolder) output).value, DateTimeZone.UTC).toCalendar(null);
-              return rexBuilder.makeLiteral(value,
+              //Changes to support Calcite 1.13: quick fix for 205af813 commit in Calcite
+              return rexBuilder.makeLiteral(TimeString.fromCalendarFields(value),
                 TypeInferenceUtils.createCalciteTypeWithNullability(typeFactory, SqlTypeName.TIME, newCall.getType().isNullable()), false);
             }
             case TIMESTAMP: {
               Calendar value = (materializedExpr.getMajorType().getMode() == TypeProtos.DataMode.OPTIONAL) ?
                 new DateTime(((NullableTimeStampHolder) output).value, DateTimeZone.UTC).toCalendar(null) :
                 new DateTime(((TimeStampHolder) output).value, DateTimeZone.UTC).toCalendar(null);
-              return rexBuilder.makeLiteral(value,
+              //Changes to support Calcite 1.13: quick fix for 205af813 commit in Calcite
+              return rexBuilder.makeLiteral(TimestampString.fromCalendarFields(value),
                 TypeInferenceUtils.createCalciteTypeWithNullability(typeFactory, SqlTypeName.TIMESTAMP, newCall.getType().isNullable()), false);
             }
             case INTERVALYEAR: {
@@ -311,9 +319,10 @@ public class DrillConstExecutor implements RelOptPlanner.Executor {
                 days = intervalDayOut.days;
                 milliseconds = intervalDayOut.milliseconds;
               }
+              // Changes to support Calcite 1.13
               return rexBuilder.makeLiteral(
                 new BigDecimal(days * DateUtility.daysToStandardMillis + milliseconds),
-                TypeInferenceUtils.createCalciteTypeWithNullability(typeFactory, SqlTypeName.INTERVAL_DAY_TIME, newCall.getType().isNullable()),
+                TypeInferenceUtils.createCalciteTypeWithNullability(typeFactory, SqlTypeName.INTERVAL_DAY, newCall.getType().isNullable()),
                 false);
             }
             // The list of known unsupported types is used to trigger this behavior of re-using the input expression
