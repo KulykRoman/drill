@@ -135,7 +135,7 @@ public class Records {
         case VARCHAR:             this.DATA_TYPE = "CHARACTER VARYING"; break;
         case VARBINARY:           this.DATA_TYPE = "BINARY VARYING";    break;
         case INTERVAL_YEAR_MONTH: this.DATA_TYPE = "INTERVAL";          break;
-        case INTERVAL_DAY_TIME:   this.DATA_TYPE = "INTERVAL";          break;
+        case INTERVAL_DAY:        this.DATA_TYPE = "INTERVAL";          break;
         // 3:  SqlTypeName enumerators not yet seen and confirmed or handled.
         default:
           logger.warn( "Type not handled explicitly (code needs review): "
@@ -293,7 +293,7 @@ public class Records {
           }
           break;
         case INTERVAL_YEAR_MONTH:
-        case INTERVAL_DAY_TIME:
+        case INTERVAL_DAY:
           this.CHARACTER_MAXIMUM_LENGTH = null;
           this.CHARACTER_OCTET_LENGTH = null;
           this.NUMERIC_PRECISION = null;
@@ -306,7 +306,7 @@ public class Records {
               // even though SECOND does not exist for this case.
               this.DATETIME_PRECISION = 0;
               break;
-            case INTERVAL_DAY_TIME:
+            case INTERVAL_DAY:
               this.DATETIME_PRECISION =
                   relDataType
                   .getIntervalQualifier()
