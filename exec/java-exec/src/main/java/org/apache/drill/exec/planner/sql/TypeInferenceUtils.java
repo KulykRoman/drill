@@ -73,7 +73,7 @@ public class TypeInferenceUtils {
       .put(TypeProtos.MinorType.TIMESTAMP, SqlTypeName.TIMESTAMP)
       .put(TypeProtos.MinorType.VARBINARY, SqlTypeName.VARBINARY)
       .put(TypeProtos.MinorType.INTERVALYEAR, SqlTypeName.INTERVAL_YEAR_MONTH)
-      .put(TypeProtos.MinorType.INTERVALDAY, SqlTypeName.INTERVAL_DAY_TIME)
+      .put(TypeProtos.MinorType.INTERVALDAY, SqlTypeName.INTERVAL_DAY)
       .put(TypeProtos.MinorType.MAP, SqlTypeName.MAP)
       .put(TypeProtos.MinorType.LIST, SqlTypeName.ARRAY)
       .put(TypeProtos.MinorType.LATE, SqlTypeName.ANY)
@@ -97,8 +97,10 @@ public class TypeInferenceUtils {
       .put(SqlTypeName.TIME, TypeProtos.MinorType.TIME)
       .put(SqlTypeName.TIMESTAMP, TypeProtos.MinorType.TIMESTAMP)
       .put(SqlTypeName.VARBINARY, TypeProtos.MinorType.VARBINARY)
+      .put(SqlTypeName.INTERVAL_YEAR, TypeProtos.MinorType.INTERVALYEAR)
       .put(SqlTypeName.INTERVAL_YEAR_MONTH, TypeProtos.MinorType.INTERVALYEAR)
-      .put(SqlTypeName.INTERVAL_DAY_TIME, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_DAY, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_DAY_MINUTE, TypeProtos.MinorType.INTERVALDAY)
 
       // SqlTypeName.CHAR is the type for Literals in Calcite, Drill treats Literals as VARCHAR also
       .put(SqlTypeName.CHAR, TypeProtos.MinorType.VARCHAR)
@@ -734,7 +736,7 @@ public class TypeInferenceUtils {
                                                              SqlTypeName sqlTypeName,
                                                              boolean isNullable) {
     RelDataType type;
-    if (sqlTypeName == SqlTypeName.INTERVAL_DAY_TIME) {
+    if (sqlTypeName == SqlTypeName.INTERVAL_DAY) {
       type = typeFactory.createSqlIntervalType(
           new SqlIntervalQualifier(
               TimeUnit.DAY,
