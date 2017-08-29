@@ -21,9 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.avatica.util.Casing;
+import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.jdbc.CalciteSchema;
-import org.apache.calcite.jdbc.CalciteSchemaImpl;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
@@ -31,9 +34,10 @@ import org.apache.calcite.plan.RelOptCostFactory;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
+import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelCollationTraitDef;
-import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
@@ -44,15 +48,20 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.drill.common.config.DrillConfig;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.types.Types;
@@ -64,6 +73,7 @@ import org.apache.drill.exec.planner.cost.DrillCostBase;
 import org.apache.drill.exec.planner.logical.DrillConstExecutor;
 import org.apache.drill.exec.planner.physical.DrillDistributionTraitDef;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
+import org.apache.drill.exec.planner.sql.parser.impl.DrillParserWithCompoundIdConverter;
 import org.apache.drill.exec.rpc.user.UserSession;
 
 import com.google.common.base.Joiner;
@@ -114,9 +124,9 @@ public class SqlConverter {
     this.session = context.getSession();
     this.drillConfig = context.getConfig();
     this.catalog = new DrillCalciteCatalogReader(
-        CalciteSchemaImpl.from(rootSchema),
+        CalciteSchema.from(rootSchema),
         parserConfig.caseSensitive(),
-        CalciteSchemaImpl.from(defaultSchema).path(null),
+        CalciteSchema.from(defaultSchema).path(null),
         typeFactory,
         drillConfig,
         session);
@@ -250,8 +260,7 @@ public class SqlConverter {
     }
   }
 
-  public RelNode toRel(
-      final SqlNode validatedNode) {
+  public RelRoot toRel(final SqlNode validatedNode) {
     final RexBuilder rexBuilder = new DrillRexBuilder(typeFactory);
     if (planner == null) {
       planner = new VolcanoPlanner(costFactory, settings);
@@ -266,9 +275,10 @@ public class SqlConverter {
     final SqlToRelConverter sqlToRelConverter =
         new SqlToRelConverter(new Expander(), validator, catalog, cluster, DrillConvertletTable.INSTANCE,
             sqlToRelConverterConfig);
-    final RelNode rel = sqlToRelConverter.convertQuery(validatedNode, false, !isInnerQuery);
-    final RelNode rel2 = sqlToRelConverter.flattenTypes(rel, true);
-    final RelNode rel3 = RelDecorrelator.decorrelateQuery(rel2);
+    //Changes to support Calcite 1.13.
+    final RelRoot rel = sqlToRelConverter.convertQuery(validatedNode, false, !isInnerQuery);
+    final RelRoot rel2 = rel.withRel(sqlToRelConverter.flattenTypes(rel.rel, true));
+    final RelRoot rel3 = rel2.withRel(RelDecorrelator.decorrelateQuery(rel2.rel));
     return rel3;
 
   }
@@ -279,9 +289,9 @@ public class SqlConverter {
     }
 
     @Override
-    public RelNode expandView(RelDataType rowType, String queryString, List<String> schemaPath) {
+    public RelRoot expandView(RelDataType rowType, String queryString, List<String> schemaPath, List<String> viewPath) {
       final DrillCalciteCatalogReader catalogReader = new DrillCalciteCatalogReader(
-          CalciteSchemaImpl.from(rootSchema),
+          CalciteSchema.from(rootSchema),
           parserConfig.caseSensitive(),
           schemaPath,
           typeFactory,
@@ -292,9 +302,9 @@ public class SqlConverter {
     }
 
     @Override
-    public RelNode expandView(RelDataType rowType, String queryString, SchemaPlus rootSchema, List<String> schemaPath) {
+    public RelRoot expandView(RelDataType rowType, String queryString, SchemaPlus rootSchema, List<String> schemaPath) {
       final DrillCalciteCatalogReader catalogReader = new DrillCalciteCatalogReader(
-          CalciteSchemaImpl.from(rootSchema), // new root schema
+          CalciteSchema.from(rootSchema), // new root schema
           parserConfig.caseSensitive(),
           schemaPath,
           typeFactory,
@@ -321,13 +331,60 @@ public class SqlConverter {
       return expandView(queryString, parser);
     }
 
-    private RelNode expandView(String queryString, SqlConverter converter) {
+    private RelRoot expandView(String queryString, SqlConverter converter) {
       converter.disallowTemporaryTables();
       final SqlNode parsedNode = converter.parse(queryString);
       final SqlNode validatedNode = converter.validate(parsedNode);
       return converter.toRel(validatedNode);
     }
 
+  }
+
+  private class ParserConfig implements SqlParser.Config {
+
+    private final SqlConformance conformance = SqlConformanceEnum.DEFAULT;
+
+    final long identifierMaxLength = settings.getIdentifierMaxLength();
+
+    @Override
+    public int identifierMaxLength() {
+      return (int) identifierMaxLength;
+    }
+
+    @Override
+    public Casing quotedCasing() {
+      return Casing.UNCHANGED;
+    }
+
+    @Override
+    public Casing unquotedCasing() {
+      return Casing.UNCHANGED;
+    }
+
+    @Override
+    public Quoting quoting() {
+      return Quoting.BACK_TICK;
+    }
+
+    @Override
+    public boolean caseSensitive() {
+      return false;
+    }
+
+    @Override
+    public SqlConformance conformance() {
+      return conformance;
+    }
+
+    @Override
+    public boolean allowBangEqual() {
+      return conformance.isBangEqualAllowed();
+    }
+
+    @Override
+    public SqlParserImplFactory parserFactory() {
+      return DrillParserWithCompoundIdConverter.FACTORY;
+    }
   }
 
   private class SqlToRelConverterConfig implements SqlToRelConverter.Config {
@@ -365,7 +422,7 @@ public class SqlConverter {
     }
 
     @Override
-    public int getInSubqueryThreshold() {
+    public int getInSubQueryThreshold() {
       return inSubqueryThreshold;
     }
   }
@@ -462,8 +519,9 @@ public class SqlConverter {
      * @throws UserException if temporary tables usage is disallowed
      */
     @Override
-    public RelOptTableImpl getTable(final List<String> names) {
-      RelOptTableImpl temporaryTable = null;
+    public Prepare.PreparingTable getTable(final List<String> names) {
+      //Changes to support Calcite 1.13.
+      Prepare.PreparingTable temporaryTable = null;
 
       if (mightBeTemporaryTable(names, session.getDefaultSchemaPath(), drillConfig)) {
         String temporaryTableName = session.resolveTemporaryTableName(names.get(names.size() - 1));

@@ -225,7 +225,8 @@ public abstract class DrillValuesRelBase extends Values implements DrillRelNode 
         }
         return;
 
-      case INTERVAL_DAY_TIME:
+      // Changes to support Calcite 1.13
+      case INTERVAL_DAY:
         if (isLiteralNull(literal)) {
           out.writeIntervalNull();
         } else {

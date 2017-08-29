@@ -24,6 +24,13 @@ import org.apache.calcite.rex.RexNode;
 public final class DrillConditions {
 
   public static PushProjector.ExprCondition PRESERVE_ITEM = new PushProjector.ExprCondition() {
+
+    // Changes to support Calcite 1.13
+    @Override
+    public boolean apply(RexNode rexNode) {
+      return false;
+    }
+
     @Override
     public boolean test(RexNode expr) {
       if (expr instanceof RexCall) {
