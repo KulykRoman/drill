@@ -20,10 +20,10 @@ package org.apache.drill.exec.planner.types;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelDataTypePrecedenceList;
 import org.apache.calcite.sql.type.SqlTypeExplicitPrecedenceList;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -34,7 +34,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
  * we always return true and indicate that the type of that
  * field is 'ANY'
  */
-public class RelDataTypeDrillImpl extends RelDataTypeImpl {
+public class RelDataTypeDrillImpl extends DynamicRecordType {
 
     private final RelDataTypeFactory typeFactory;
     private final RelDataTypeHolder holder;
