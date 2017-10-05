@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableList;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptLattice;
 import org.apache.calcite.plan.RelOptMaterialization;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -381,7 +382,8 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
         hepPgmBldr.addRuleInstance(rule);
       }
 
-      final HepPlanner planner = new HepPlanner(hepPgmBldr.build(), context.getPlannerSettings());
+      final HepPlanner planner = new HepPlanner(hepPgmBldr.build(), context.getPlannerSettings(), true, null,
+          RelOptCostImpl.FACTORY);
 
       JaninoRelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(DrillDefaultRelMetadataProvider.INSTANCE);
       RelMetadataQuery.THREAD_PROVIDERS.set(relMetadataProvider);
