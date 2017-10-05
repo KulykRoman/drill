@@ -266,7 +266,7 @@ public class SqlConverter {
     final SqlToRelConverter sqlToRelConverter =
         new SqlToRelConverter(new Expander(), validator, catalog, cluster, DrillConvertletTable.INSTANCE,
             sqlToRelConverterConfig);
-    final RelNode rel = sqlToRelConverter.convertQuery(validatedNode, false, !isInnerQuery);
+    final RelNode rel = sqlToRelConverter.convertQuery(validatedNode, false, false);
     final RelNode rel2 = sqlToRelConverter.flattenTypes(rel, true);
     final RelNode rel3 = RelDecorrelator.decorrelateQuery(rel2);
     return rel3;
