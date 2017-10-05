@@ -117,4 +117,9 @@ public class RelDataTypeDrillImpl extends RelDataTypeImpl {
     public RelDataTypeFamily getFamily() {
       return getSqlTypeName().getFamily();
     }
+
+    @Override
+    public boolean isDynamicStruct() {
+      return true;
+    }
 }

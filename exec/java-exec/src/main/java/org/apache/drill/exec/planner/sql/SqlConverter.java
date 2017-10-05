@@ -276,7 +276,7 @@ public class SqlConverter {
         new SqlToRelConverter(new Expander(), validator, catalog, cluster, DrillConvertletTable.INSTANCE,
             sqlToRelConverterConfig);
     //Changes to support Calcite 1.13.
-    final RelRoot rel = sqlToRelConverter.convertQuery(validatedNode, false, !isInnerQuery);
+    final RelRoot rel = sqlToRelConverter.convertQuery(validatedNode, false, false);
     final RelRoot rel2 = rel.withRel(sqlToRelConverter.flattenTypes(rel.rel, true));
     final RelRoot rel3 = rel2.withRel(RelDecorrelator.decorrelateQuery(rel2.rel));
     return rel3;
