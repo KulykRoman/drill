@@ -27,6 +27,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypePrecedenceList;
 import org.apache.calcite.sql.type.SqlTypeExplicitPrecedenceList;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.Pair;
 
 /* We use an instance of this class as the row type for
  * Drill table. Since we don't know the schema before hand
@@ -58,7 +59,14 @@ public class RelDataTypeDrillImpl extends DynamicRecordType {
 
     @Override
     public RelDataTypeField getField(String fieldName, boolean caseSensitive, boolean elideRecord) {
-      return holder.getField(typeFactory, fieldName);
+      final Pair<RelDataTypeField, Boolean> pair =
+          holder.getFieldOrInsert(fieldName, caseSensitive);
+      // If a new field is added, we should re-compute the digest.
+      if (pair.right) {
+        computeDigest();
+      }
+
+      return pair.left;
     }
 
     @Override

@@ -19,12 +19,15 @@ package org.apache.drill.exec.planner.types;
 
 import java.util.List;
 
+import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import com.google.common.collect.Lists;
+import org.apache.calcite.util.Pair;
+import org.apache.calcite.util.Util;
 
 public class RelDataTypeHolder {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RelDataTypeHolder.class);
@@ -37,6 +40,30 @@ public class RelDataTypeHolder {
     addStarIfEmpty(typeFactory);
     return fields;
   }
+
+  Pair<RelDataTypeField, Boolean> getFieldOrInsert(String fieldName, boolean caseSensitive) {
+    // First check if this field name exists in our field list
+    for (RelDataTypeField f : fields) {
+      if (Util.matches(caseSensitive, f.getName(), fieldName)) {
+        return Pair.of(f, false);
+      }
+    }
+
+    final SqlTypeName typeName = DynamicRecordType.isDynamicStarColName(fieldName)
+        ? SqlTypeName.DYNAMIC_STAR : SqlTypeName.ANY;
+
+    // This field does not exist in our field list add it
+    RelDataTypeField newField = new RelDataTypeFieldImpl(
+        fieldName,
+        fields.size(),
+        typeFactory.createTypeWithNullability(typeFactory.createSqlType(typeName), true));
+
+    // Add the name to our list of field names
+    fields.add(newField);
+
+    return Pair.of(newField, true);
+  }
+
 
   public int getFieldCount() {
     addStarIfEmpty(this.typeFactory);
