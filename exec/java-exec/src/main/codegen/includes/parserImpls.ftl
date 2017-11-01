@@ -118,7 +118,7 @@ SqlNode SqlDescribeTable() :
         E()
     )
     {
-        return new org.apache.drill.exec.planner.sql.parser.SqlDescribeTable(pos, table, column, columnPattern);
+        return new DrillSqlDescribeTable(pos, table, column, columnPattern);
     }
 }
 
@@ -309,7 +309,7 @@ SqlNode SqlDescribeSchema() :
    <DESCRIBE> { pos = getPos(); }
    (<SCHEMA> | <DATABASE>) { schema = CompoundIdentifier(); }
    {
-        return new org.apache.drill.exec.planner.sql.parser.SqlDescribeSchema(pos, schema);
+        return new SqlDescribeSchema(pos, schema);
    }
 }
 
