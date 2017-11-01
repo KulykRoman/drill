@@ -29,6 +29,7 @@ import static org.apache.drill.exec.store.ischema.InfoSchemaConstants.TAB_COLUMN
 import java.util.List;
 
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlDescribeTable;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -41,7 +42,6 @@ import org.apache.calcite.util.Util;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.exec.planner.sql.SchemaUtilites;
 import org.apache.drill.exec.planner.sql.parser.DrillParserUtil;
-import org.apache.drill.exec.planner.sql.parser.SqlDescribeTable;
 import org.apache.drill.exec.work.foreman.ForemanSetupException;
 
 import com.google.common.collect.ImmutableList;
@@ -116,11 +116,6 @@ public class DescribeTableHandler extends DefaultSqlHandler {
                 new SqlIdentifier(COLS_COL_COLUMN_NAME, SqlParserPos.ZERO),
                 SqlStdOperatorTable.EQUALS,
                 SqlLiteral.createCharString(node.getColumn().toString(), charset, SqlParserPos.ZERO));
-      } else if (node.getColumnQualifier() != null) {
-        columnFilter =
-            DrillParserUtil.createCondition(
-                new SqlIdentifier(COLS_COL_COLUMN_NAME, SqlParserPos.ZERO),
-                SqlStdOperatorTable.LIKE, node.getColumnQualifier());
       }
 
       where = DrillParserUtil.createCondition(where, SqlStdOperatorTable.AND, columnFilter);

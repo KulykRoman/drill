@@ -256,24 +256,21 @@ public class TestInfoSchema extends BaseTestQuery {
   @Test
   public void describeTableWithColQualifier() throws Exception{
     testBuilder()
-        .sqlQuery("DESCRIBE COLUMNS 'TABLE%'")
+        .sqlQuery("DESCRIBE COLUMNS TABLE_CATALOG")
         .unOrdered()
         .optionSettingQueriesForTestQuery("USE INFORMATION_SCHEMA")
         .baselineColumns("COLUMN_NAME", "DATA_TYPE", "IS_NULLABLE")
         .baselineValues("TABLE_CATALOG", "CHARACTER VARYING", "NO")
-        .baselineValues("TABLE_SCHEMA", "CHARACTER VARYING", "NO")
-        .baselineValues("TABLE_NAME", "CHARACTER VARYING", "NO")
         .go();
   }
 
   @Test
   public void describeTableWithSchemaAndColQualifier() throws Exception{
     testBuilder()
-        .sqlQuery("DESCRIBE INFORMATION_SCHEMA.SCHEMATA 'SCHEMA%'")
+        .sqlQuery("DESCRIBE INFORMATION_SCHEMA.SCHEMATA SCHEMA_NAME")
         .unOrdered()
         .baselineColumns("COLUMN_NAME", "DATA_TYPE", "IS_NULLABLE")
         .baselineValues("SCHEMA_NAME", "CHARACTER VARYING", "NO")
-        .baselineValues("SCHEMA_OWNER", "CHARACTER VARYING", "NO")
         .go();
   }
 

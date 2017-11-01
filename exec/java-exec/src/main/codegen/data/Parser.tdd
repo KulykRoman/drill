@@ -43,8 +43,6 @@
   statementParserMethods: [
     "SqlShowTables()",
     "SqlShowSchemas()",
-    "SqlDescribeSchema()"
-    "SqlDescribeTable()",
     "SqlUseSchema()",
     "SqlCreateOrReplaceView()",
     "SqlDropView()",

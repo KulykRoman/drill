@@ -96,32 +96,6 @@ SqlNode SqlShowSchemas() :
     }
 }
 
-/**
- * Parses statement
- *   { DESCRIBE | DESC } tblname [col_name | wildcard ]
- */
-SqlNode SqlDescribeTable() :
-{
-    SqlParserPos pos;
-    SqlIdentifier table;
-    SqlIdentifier column = null;
-    SqlNode columnPattern = null;
-}
-{
-    (<DESCRIBE> | <DESC>) { pos = getPos(); }
-    table = CompoundIdentifier()
-    (
-        column = CompoundIdentifier()
-        |
-        columnPattern = StringLiteral()
-        |
-        E()
-    )
-    {
-        return new org.apache.drill.exec.planner.sql.parser.SqlDescribeTable(pos, table, column, columnPattern);
-    }
-}
-
 SqlNode SqlUseSchema():
 {
     SqlIdentifier schema;
@@ -283,23 +257,6 @@ SqlNode SqlRefreshMetadata() :
     {
         return new SqlRefreshMetadata(pos, tblName);
     }
-}
-
-/**
-* Parses statement
-*   DESCRIBE { SCHEMA | DATABASE } name
-*/
-SqlNode SqlDescribeSchema() :
-{
-   SqlParserPos pos;
-   SqlIdentifier schema;
-}
-{
-   <DESCRIBE> { pos = getPos(); }
-   (<SCHEMA> | <DATABASE>) { schema = CompoundIdentifier(); }
-   {
-        return new org.apache.drill.exec.planner.sql.parser.SqlDescribeSchema(pos, schema);
-   }
 }
 
 /**
