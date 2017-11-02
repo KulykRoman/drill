@@ -35,7 +35,6 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
-import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataType;
@@ -44,6 +43,8 @@ import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -55,13 +56,11 @@ import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
-import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
+import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.drill.common.config.DrillConfig;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.types.Types;
@@ -77,8 +76,6 @@ import org.apache.drill.exec.planner.sql.parser.impl.DrillParserWithCompoundIdCo
 import org.apache.drill.exec.rpc.user.UserSession;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 /**
  * Class responsible for managing parsing, validation and toRel conversion for sql statements.
@@ -225,6 +222,45 @@ public class SqlConverter {
     protected DrillValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader,
         RelDataTypeFactory typeFactory, SqlConformance conformance) {
       super(opTab, catalogReader, typeFactory, conformance);
+    }
+
+    @Override
+    protected void validateFrom(
+        SqlNode node,
+        RelDataType targetRowType,
+        SqlValidatorScope scope) {
+      switch (node.getKind()) {
+      case AS:
+        if (((SqlCall) node).operand(0) instanceof SqlIdentifier) {
+          SqlIdentifier tempNode = ((SqlCall) node).operand(0);
+          changeNamesIfTableIsTemporary(tempNode);
+        }
+      default:
+        super.validateFrom(node, targetRowType, scope);
+      }
+    }
+
+    @Override
+    public String deriveAlias(
+        SqlNode node,
+        int ordinal) {
+      if (node instanceof SqlIdentifier) {
+        SqlIdentifier tempNode = ((SqlIdentifier) node);
+        changeNamesIfTableIsTemporary(tempNode);
+      }
+      return SqlValidatorUtil.getAlias(node, ordinal);
+    }
+
+    private void changeNamesIfTableIsTemporary(SqlIdentifier tempNode) {
+      List<String> temporaryTableNames = ((SqlConverter.DrillCalciteCatalogReader) getCatalogReader()).getTemporaryNames(tempNode.names);
+      if (temporaryTableNames != null) {
+        SqlParserPos pos = tempNode.getComponentParserPosition(0);
+        List<SqlParserPos> poses = Lists.newArrayList();
+        for (int i = 0; i < temporaryTableNames.size(); i++) {
+          poses.add(i, pos);
+        }
+        tempNode.setNames(temporaryTableNames, poses);
+      }
     }
   }
 
@@ -508,6 +544,16 @@ public class SqlConverter {
       this.allowTemporaryTables = false;
     }
 
+    private List<String> getTemporaryNames(List<String> names) {
+      if (mightBeTemporaryTable(names, session.getDefaultSchemaPath(), drillConfig)) {
+        String temporaryTableName = session.resolveTemporaryTableName(names.get(names.size() - 1));
+        if (temporaryTableName != null) {
+          return Lists.newArrayList(temporarySchema, temporaryTableName);
+        }
+      }
+      return null;
+    }
+
     /**
      * If schema is not indicated (only one element in the list) or schema is default temporary workspace,
      * we need to check among session temporary tables in default temporary workspace first.
@@ -520,24 +566,14 @@ public class SqlConverter {
      */
     @Override
     public Prepare.PreparingTable getTable(final List<String> names) {
-      //Changes to support Calcite 1.13.
-      Prepare.PreparingTable temporaryTable = null;
-
-      if (mightBeTemporaryTable(names, session.getDefaultSchemaPath(), drillConfig)) {
-        String temporaryTableName = session.resolveTemporaryTableName(names.get(names.size() - 1));
-        if (temporaryTableName != null) {
-          List<String> temporaryNames = Lists.newArrayList(temporarySchema, temporaryTableName);
-          temporaryTable = super.getTable(temporaryNames);
+      String originalTableName = session.getOriginalTableNameFromTemporaryTable(names.get(names.size() - 1));
+      if (originalTableName != null) {
+        if (!allowTemporaryTables) {
+          throw UserException
+              .validationError()
+              .message("Temporary tables usage is disallowed. Used temporary table name: [%s].", originalTableName)
+              .build(logger);
         }
-      }
-      if (temporaryTable != null) {
-        if (allowTemporaryTables) {
-          return temporaryTable;
-        }
-        throw UserException
-            .validationError()
-            .message("Temporary tables usage is disallowed. Used temporary table name: %s.", names)
-            .build(logger);
       }
       return super.getTable(names);
     }
