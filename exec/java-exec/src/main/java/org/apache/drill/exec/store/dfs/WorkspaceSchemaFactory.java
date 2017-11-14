@@ -228,7 +228,7 @@ public class WorkspaceSchemaFactory {
             .validationError()
             .message("Unable to find table [%s] in schema [%s]", sig.name, schema.getFullSchemaName())
             .build(logger);
-      }
+    }
       return new DrillTranslatableTable(drillTable);
     }
 
@@ -576,7 +576,7 @@ public class WorkspaceSchemaFactory {
     @Override
     public DrillTable create(TableInstance key) {
       try {
-        final FileSelection fileSelection = FileSelection.create(fs, config.getLocation(), key.sig.name);
+        final FileSelection fileSelection = FileSelection.create(fs, config.getLocation(), key.sig.name, config.allowAccessOutsideWorkspace());
         if (fileSelection == null) {
           return null;
         }
@@ -655,7 +655,7 @@ public class WorkspaceSchemaFactory {
      * @throws IOException is case of problems accessing table files
      */
     private boolean isHomogeneous(String tableName) throws IOException {
-      FileSelection fileSelection = FileSelection.create(fs, config.getLocation(), tableName);
+      FileSelection fileSelection = FileSelection.create(fs, config.getLocation(), tableName, config.allowAccessOutsideWorkspace());
 
       if (fileSelection == null) {
         throw UserException
