@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -74,7 +75,6 @@ import org.apache.drill.exec.planner.cost.DrillCostBase;
 import org.apache.drill.exec.planner.logical.DrillConstExecutor;
 import org.apache.drill.exec.planner.physical.DrillDistributionTraitDef;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
-import org.apache.drill.exec.planner.sql.parser.impl.DrillParserWithCompoundIdConverter;
 import org.apache.drill.exec.rpc.user.UserSession;
 
 import com.google.common.base.Joiner;
@@ -107,6 +107,7 @@ public class SqlConverter {
 
   private String sql;
   private VolcanoPlanner planner;
+  private boolean useRootSchema = false;
 
 
   public SqlConverter(QueryContext context) {
@@ -216,6 +217,15 @@ public class SqlConverter {
   /** Disallow temporary tables presence in sql statement (ex: in view definitions) */
   public void disallowTemporaryTables() {
     catalog.disallowTemporaryTables();
+  }
+
+  /**
+   * Is root schema path should be used as default schema path.
+   *
+   * @param useRoot flag
+   */
+  public void useRootSchemaAsDefault(boolean useRoot) {
+    useRootSchema = useRoot;
   }
 
   private class DrillValidator extends SqlValidatorImpl {
@@ -570,6 +580,14 @@ public class SqlConverter {
         }
       }
       return super.getTable(names);
+    }
+
+    @Override
+    public List<List<String>> getSchemaPaths() {
+      if (useRootSchema) {
+        return ImmutableList.<List<String>>of(ImmutableList.<String>of());
+      }
+      return super.getSchemaPaths();
     }
 
     /**
