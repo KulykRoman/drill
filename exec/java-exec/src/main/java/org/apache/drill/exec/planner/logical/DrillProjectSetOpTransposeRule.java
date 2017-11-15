@@ -19,7 +19,6 @@
 package org.apache.drill.exec.planner.logical;
 
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.rules.ProjectSetOpTransposeRule;
 import org.apache.calcite.rel.rules.PushProjector;
 
@@ -28,6 +27,6 @@ public class DrillProjectSetOpTransposeRule extends ProjectSetOpTransposeRule {
 
   //Changes to support Calcite 1.13.
   protected DrillProjectSetOpTransposeRule(PushProjector.ExprCondition preserveExprCondition) {
-    super(preserveExprCondition, RelFactories.LOGICAL_BUILDER);
+    super(preserveExprCondition, DrillRelFactories.LOGICAL_BUILDER);
   }
 }

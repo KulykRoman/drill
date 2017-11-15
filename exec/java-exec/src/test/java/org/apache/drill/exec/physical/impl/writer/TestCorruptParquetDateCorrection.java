@@ -28,6 +28,7 @@ import org.apache.drill.exec.store.parquet.Metadata;
 import org.apache.hadoop.fs.Path;
 import org.joda.time.DateTime;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -192,6 +193,7 @@ public class TestCorruptParquetDateCorrection extends PlanTestBase {
 
 
   @Test
+  @Ignore("according to SQL spec. '4.4.3.5 Datetime types' year should be less than 9999")
   public void testReadPartitionedOnCorruptedDates_UserDisabledCorrection() throws Exception {
     try {
       for (String selection : new String[]{"*", "date_col"}) {
@@ -350,6 +352,7 @@ public class TestCorruptParquetDateCorrection extends PlanTestBase {
   }
 
   @Test
+  @Ignore("according to SQL spec. '4.4.3.5 Datetime types' year should be less than 9999")
   public void testReadOldMetadataCacheFileOverrideCorrection() throws Exception {
     // for sanity, try reading all partitions without a filter
     TestBuilder builder = testBuilder()
