@@ -17,7 +17,6 @@
  */
 package org.apache.drill.exec.planner.logical;
 
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
 import org.apache.calcite.rel.rules.PushProjector;
 import org.apache.calcite.plan.RelOptRule;
@@ -28,7 +27,7 @@ public class DrillPushProjectPastJoinRule extends ProjectJoinTransposeRule {
 
   //Changes to support Calcite 1.13.
   protected DrillPushProjectPastJoinRule(PushProjector.ExprCondition preserveExprCondition) {
-    super(preserveExprCondition, RelFactories.LOGICAL_BUILDER);
+    super(preserveExprCondition, DrillRelFactories.LOGICAL_BUILDER);
   }
 
 }
