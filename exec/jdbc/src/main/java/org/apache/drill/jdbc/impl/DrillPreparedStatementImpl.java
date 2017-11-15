@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -38,7 +38,7 @@ import org.apache.drill.jdbc.DrillPreparedStatement;
  * <p>
  * This class has sub-classes which implement JDBC 3.0 and JDBC 4.0 APIs; it is
  * instantiated using
- * {@link net.hydromatic.avatica.AvaticaFactory#newPreparedStatement}.
+ * {@link org.apache.calcite.avatica.AvaticaFactory#newPreparedStatement}.
  * </p>
  */
 abstract class DrillPreparedStatementImpl extends AvaticaPreparedStatement
@@ -58,7 +58,9 @@ abstract class DrillPreparedStatementImpl extends AvaticaPreparedStatement
           resultSetType, resultSetConcurrency, resultSetHoldability);
     connection.openStatementsRegistry.addStatement(this);
     this.preparedStatementHandle = preparedStatementHandle;
-    ((DrillColumnMetaDataList) signature.columns).updateColumnMetaData(preparedStatementHandle.getColumnsList());
+    if (preparedStatementHandle != null) {
+      ((DrillColumnMetaDataList) signature.columns).updateColumnMetaData(preparedStatementHandle.getColumnsList());
+    }
   }
 
   /**
@@ -328,9 +330,8 @@ abstract class DrillPreparedStatementImpl extends AvaticaPreparedStatement
     }
   }
 
-  //Changes to support Calcite 1.13.
   @Override
-  public void clearBatch() throws RuntimeException {
+  public void clearBatch() {
     try {
       throwIfClosed();
     } catch (AlreadyClosedSqlException e) {
