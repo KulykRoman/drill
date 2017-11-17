@@ -332,9 +332,19 @@ public class DrillOptiq {
 
         // Changes to support Calcite 1.13
         case "INTERVAL_YEAR":
-        case "INTERVAL_YEAR_MONTH": castType = Types.required(MinorType.INTERVALYEAR); break;
+        case "INTERVAL_YEAR_MONTH":
+        case "INTERVAL_MONTH": castType = Types.required(MinorType.INTERVALYEAR); break;
+        case "INTERVAL_DAY_TIME":
         case "INTERVAL_DAY":
-        case "INTERVAL_DAY_MINUTE": castType = Types.required(MinorType.INTERVALDAY); break;
+        case "INTERVAL_DAY_HOUR":
+        case "INTERVAL_DAY_MINUTE":
+        case "INTERVAL_DAY_SECOND":
+        case "INTERVAL_HOUR":
+        case "INTERVAL_HOUR_MINUTE":
+        case "INTERVAL_HOUR_SECOND":
+        case "INTERVAL_MINUTE":
+        case "INTERVAL_MINUTE_SECOND":
+        case "INTERVAL_SECOND": castType = Types.required(MinorType.INTERVALDAY); break;
         case "BOOLEAN": castType = Types.required(MinorType.BIT); break;
         case "BINARY": castType = Types.required(MinorType.VARBINARY); break;
         case "ANY": return arg; // Type will be same as argument.

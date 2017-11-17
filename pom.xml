@@ -694,18 +694,22 @@
     <dependencies>
       <dependency>
         <groupId>org.apache.calcite.avatica</groupId>
-        <artifactId>avatica-core</artifactId>
-        <version>${avatica.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.calcite.avatica</groupId>
-        <artifactId>avatica-server</artifactId>
-        <version>${avatica.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.calcite.avatica</groupId>
         <artifactId>avatica</artifactId>
         <version>${avatica.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.calcite.avatica</groupId>
+            <artifactId>avatica-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <artifactId>protobuf-java</artifactId>
+            <groupId>com.google.protobuf</groupId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.freemarker</groupId>
@@ -1662,6 +1666,10 @@
             <artifactId>calcite-core</artifactId>
             <version>${calcite.version}</version>
             <exclusions>
+              <exclusion>
+                <groupId>org.apache.calcite.avatica</groupId>
+                <artifactId>avatica-core</artifactId>
+              </exclusion>
               <exclusion>
                 <groupId>org.jgrapht</groupId>
                 <artifactId>jgrapht-jdk1.5</artifactId>
