@@ -107,6 +107,7 @@ public class View {
         s = dataType.getScale();
         break;
       //Changes to support Calcite 1.13.
+      case INTERVAL_YEAR:
       case INTERVAL_YEAR_MONTH:
       case INTERVAL_MONTH:
       case INTERVAL_DAY:

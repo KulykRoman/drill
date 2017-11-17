@@ -23,12 +23,7 @@
     <dependency>
       <groupId>org.apache.calcite.avatica</groupId>
       <artifactId>avatica</artifactId>
-      <version>${avatica.version}</version>
       <exclusions>
-        <exclusion>
-          <artifactId>commons-logging</artifactId>
-          <groupId>commons-logging</groupId>
-        </exclusion>
         <exclusion>
           <artifactId>jackson-core</artifactId>
           <groupId>com.fasterxml.jackson.core</groupId>
