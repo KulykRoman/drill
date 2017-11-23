@@ -334,7 +334,6 @@ public class DrillOptiq {
         case "INTERVAL_YEAR":
         case "INTERVAL_YEAR_MONTH":
         case "INTERVAL_MONTH": castType = Types.required(MinorType.INTERVALYEAR); break;
-        case "INTERVAL_DAY_TIME":
         case "INTERVAL_DAY":
         case "INTERVAL_DAY_HOUR":
         case "INTERVAL_DAY_MINUTE":
