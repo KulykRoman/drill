@@ -35,6 +35,7 @@ import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.fun.SqlAvgAggFunction;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import org.apache.drill.common.expression.ExpressionPosition;
@@ -99,8 +100,17 @@ public class TypeInferenceUtils {
       .put(SqlTypeName.VARBINARY, TypeProtos.MinorType.VARBINARY)
       .put(SqlTypeName.INTERVAL_YEAR, TypeProtos.MinorType.INTERVALYEAR)
       .put(SqlTypeName.INTERVAL_YEAR_MONTH, TypeProtos.MinorType.INTERVALYEAR)
+      .put(SqlTypeName.INTERVAL_MONTH, TypeProtos.MinorType.INTERVALYEAR)
       .put(SqlTypeName.INTERVAL_DAY, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_DAY_HOUR, TypeProtos.MinorType.INTERVALDAY)
       .put(SqlTypeName.INTERVAL_DAY_MINUTE, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_DAY_SECOND, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_HOUR, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_HOUR_MINUTE, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_HOUR_SECOND, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_MINUTE, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_MINUTE_SECOND, TypeProtos.MinorType.INTERVALDAY)
+      .put(SqlTypeName.INTERVAL_SECOND, TypeProtos.MinorType.INTERVALDAY)
 
       // SqlTypeName.CHAR is the type for Literals in Calcite, Drill treats Literals as VARCHAR also
       .put(SqlTypeName.CHAR, TypeProtos.MinorType.VARCHAR)
@@ -736,7 +746,7 @@ public class TypeInferenceUtils {
                                                              SqlTypeName sqlTypeName,
                                                              boolean isNullable) {
     RelDataType type;
-    if (sqlTypeName == SqlTypeName.INTERVAL_DAY) {
+    if (sqlTypeName.getFamily() == SqlTypeFamily.INTERVAL_DAY_TIME) {
       type = typeFactory.createSqlIntervalType(
           new SqlIntervalQualifier(
               TimeUnit.DAY,
