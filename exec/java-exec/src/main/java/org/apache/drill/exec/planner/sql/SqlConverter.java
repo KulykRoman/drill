@@ -582,6 +582,11 @@ public class SqlConverter {
               .build(logger);
         }
       }
+      if (names.size() == getSchemaPaths().size() && getSchemaPaths().size() > 1) {
+        if (names.get(0).equals(getSchemaPaths().get(0).get(0))) {
+          useRootSchemaAsDefault(true);
+        }
+      }
       return super.getTable(names);
     }
 
