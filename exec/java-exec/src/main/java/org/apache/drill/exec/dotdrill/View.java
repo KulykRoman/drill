@@ -71,8 +71,8 @@ public class View {
         @JsonProperty("endUnit")                    TimeUnit endUnit,
         @JsonProperty("fractionalSecondPrecision")  Integer fractionalSecondPrecision,
         @JsonProperty("isNullable")                 Boolean isNullable) {
-      this.name = name;
-      this.type = type;
+      this.name = name.equals("*") ? "**" : name;
+      this.type = name.equals("*") && type == SqlTypeName.ANY ? SqlTypeName.DYNAMIC_STAR : type;
       this.precision = precision;
       this.scale = scale;
       this.intervalQualifier =
