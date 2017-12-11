@@ -261,7 +261,7 @@ public class FileSystemPartitionDescriptor extends AbstractPartitionDescriptor {
             table.getUserName(),
             newFormatSelection));
     final RelOptTableImpl newOptTableImpl = RelOptTableImpl.create(t.getRelOptSchema(), t.getRowType(), newTable,
-        ImmutableList.<String>builder().addAll(t.getQualifiedName()).add("(STREAM)").build());
+        ImmutableList.<String>of());
 
     // return an EnumerableTableScan with fileSelection being part of digest of TableScan node.
     return DirPrunedEnumerableTableScan.create(oldScan.getCluster(), newOptTableImpl, newFileSelection.toString());
