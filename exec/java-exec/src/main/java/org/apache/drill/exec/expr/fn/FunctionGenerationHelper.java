@@ -47,6 +47,13 @@ public class FunctionGenerationHelper {
   public static final String LT = "less_than";
   public static final String LE = "less_than_or_equal_to";
 
+  public static final String IS_NULL = "isnull";
+  public static final String IS_NOT_NULL = "isnotnull";
+  public static final String IS_TRUE = "istrue";
+  public static final String IS_NOT_TRUE = "isnottrue";
+  public static final String IS_FALSE = "isfalse";
+  public static final String IS_NOT_FALSE = "isnotfalse";
+
   /**
    * Finds ordering comparator ("compare_to...") FunctionHolderExpression with
    * a specified ordering for NULL (and considering NULLS <i>equal</i>).

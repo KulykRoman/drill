@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -66,6 +66,27 @@ public abstract  class ParquetPredicates {
     }
   }
 
+  public static abstract class ParquetIsPredicate extends LogicalExpressionBase implements ParquetFilterPredicate {
+    protected final LogicalExpression expr;
+
+    public ParquetIsPredicate(LogicalExpression expr) {
+      super(expr.getPosition());
+      this.expr = expr;
+    }
+
+    @Override
+    public Iterator<LogicalExpression> iterator() {
+      final List<LogicalExpression> args = new ArrayList<>();
+      args.add(expr);
+      return args.iterator();
+    }
+
+    @Override
+    public <T, V, E extends Exception> T accept(ExprVisitor<T, V, E> visitor, V value) throws E {
+      return visitor.visitUnknown(this, value);
+    }
+  }
+
   public static class AndPredicate extends ParquetBooleanPredicate {
     public AndPredicate(String name, List<LogicalExpression> args, ExpressionPosition pos) {
       super(name, args, pos);
@@ -111,6 +132,164 @@ public abstract  class ParquetPredicates {
   // assumes the column chunk's statistics is not empty
   protected static boolean hasNulls(Statistics stat) {
     return stat.getNumNulls() > 0;
+  }
+
+  /**
+   * IS NULL predicate.
+   */
+  public static class IsNullPredicate extends ParquetIsPredicate {
+    public IsNullPredicate(LogicalExpression expr) {
+      super(expr);
+    }
+
+    @Override
+    public boolean canDrop(RangeExprEvaluator evaluator) {
+      Statistics exprStat = expr.accept(evaluator, null);
+
+      if (exprStat == null ||
+          exprStat.isEmpty()) {
+        return false;
+      }
+
+      //if there are no nulls  -> canDrop
+      if (!hasNulls(exprStat)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * IS NOT NULL predicate.
+   */
+  public static class IsNotNullPredicate extends ParquetIsPredicate {
+    public IsNotNullPredicate(LogicalExpression expr) {
+      super(expr);
+    }
+
+    @Override
+    public boolean canDrop(RangeExprEvaluator evaluator) {
+      Statistics exprStat = expr.accept(evaluator, null);
+
+      if (exprStat == null ||
+          exprStat.isEmpty()) {
+        return false;
+      }
+
+      //if there are all nulls  -> canDrop
+      if (isAllNulls(exprStat, evaluator.getRowCount())) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * IS TRUE predicate.
+   */
+  public static class IsTruePredicate extends ParquetIsPredicate {
+    public IsTruePredicate(LogicalExpression expr) {
+      super(expr);
+    }
+
+    @Override
+    public boolean canDrop(RangeExprEvaluator evaluator) {
+      Statistics exprStat = expr.accept(evaluator, null);
+
+      if (exprStat == null ||
+          exprStat.isEmpty()) {
+        return false;
+      }
+
+      //if max value is not true or if there are all nulls  -> canDrop
+      if (exprStat.genericGetMax().compareTo(true) != 0 ||
+          isAllNulls(exprStat, evaluator.getRowCount())) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * IS FALSE predicate.
+   */
+  public static class IsFalsePredicate extends ParquetIsPredicate {
+    public IsFalsePredicate(LogicalExpression expr) {
+      super(expr);
+    }
+
+    @Override
+    public boolean canDrop(RangeExprEvaluator evaluator) {
+      Statistics exprStat = expr.accept(evaluator, null);
+
+      if (exprStat == null ||
+          exprStat.isEmpty()) {
+        return false;
+      }
+
+      //if min value is not false or if there are all nulls  -> canDrop
+      if (exprStat.genericGetMin().compareTo(false) != 0 ||
+          isAllNulls(exprStat, evaluator.getRowCount())) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * IS NOT TRUE predicate.
+   */
+  public static class IsNotTruePredicate extends ParquetIsPredicate {
+    public IsNotTruePredicate(LogicalExpression expr) {
+      super(expr);
+    }
+
+    @Override
+    public boolean canDrop(RangeExprEvaluator evaluator) {
+      Statistics exprStat = expr.accept(evaluator, null);
+
+      if (exprStat == null ||
+          exprStat.isEmpty()) {
+        return false;
+      }
+
+      //if min value is not false or if there are no nulls  -> canDrop
+      if (exprStat.genericGetMin().compareTo(false) != 0 && !hasNulls(exprStat)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * IS NOT FALSE predicate.
+   */
+  public static class IsNotFalsePredicate extends ParquetIsPredicate {
+    public IsNotFalsePredicate(LogicalExpression expr) {
+      super(expr);
+    }
+
+    @Override
+    public boolean canDrop(RangeExprEvaluator evaluator) {
+      Statistics exprStat = expr.accept(evaluator, null);
+
+      if (exprStat == null ||
+          exprStat.isEmpty()) {
+        return false;
+      }
+
+      //if max value is not true or if there are no nulls  -> canDrop
+      if (exprStat.genericGetMax().compareTo(true) != 0 && !hasNulls(exprStat)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
   }
 
   /**
