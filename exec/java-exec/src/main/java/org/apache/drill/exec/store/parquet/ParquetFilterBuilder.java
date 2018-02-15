@@ -30,6 +30,7 @@ import org.apache.drill.exec.expr.fn.DrillSimpleFuncHolder;
 import org.apache.drill.exec.expr.fn.FunctionGenerationHelper;
 import org.apache.drill.exec.expr.fn.interpreter.InterpreterEvaluator;
 import org.apache.drill.exec.expr.holders.BigIntHolder;
+import org.apache.drill.exec.expr.holders.BitHolder;
 import org.apache.drill.exec.expr.holders.DateHolder;
 import org.apache.drill.exec.expr.holders.Float4Holder;
 import org.apache.drill.exec.expr.holders.Float8Holder;
@@ -124,6 +125,11 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
   }
 
   @Override
+  public LogicalExpression visitBooleanConstant(ValueExpressions.BooleanExpression booleanExpression, Set<LogicalExpression> value) throws RuntimeException {
+    return booleanExpression;
+  }
+
+  @Override
   public LogicalExpression visitBooleanOperator(BooleanOperator op, Set<LogicalExpression> value) {
     List<LogicalExpression> childPredicates = new ArrayList<>();
     String functionName = op.getName();
@@ -181,6 +187,8 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
       return ValueExpressions.getTimeStamp(((TimeStampHolder) holder).value);
     case TIME:
       return ValueExpressions.getTime(((TimeHolder) holder).value);
+    case BIT:
+      return ValueExpressions.getBit(((BitHolder) holder).value == 0);
     default:
       return null;
     }
@@ -212,6 +220,10 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
 
     if (isCompareFunction(funcName)) {
       return handleCompareFunction(funcHolderExpr, value);
+    }
+
+    if (isIsFunction(funcName)) {
+      return handleIsFunction(funcHolderExpr, value);
     }
 
     if (CastFunctions.isCastFunction(funcName)) {
@@ -261,6 +273,37 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
     }
   }
 
+  private LogicalExpression handleIsFunction(FunctionHolderExpression functionHolderExpression, Set<LogicalExpression> value) {
+    String funcName;
+
+    if (functionHolderExpression.getHolder() instanceof DrillSimpleFuncHolder) {
+      funcName = ((DrillSimpleFuncHolder) functionHolderExpression.getHolder()).getRegisteredNames()[0];
+    } else {
+      logger.warn("Can not cast {} to DrillSimpleFuncHolder. Parquet filter pushdown can not handle function.",
+          functionHolderExpression.getHolder());
+      return null;
+    }
+    LogicalExpression arg = functionHolderExpression.args.get(0);
+
+    switch (funcName) {
+    case FunctionGenerationHelper.IS_NULL:
+      return new ParquetPredicates.IsNullPredicate(arg.accept(this, value));
+    case FunctionGenerationHelper.IS_NOT_NULL:
+      return new ParquetPredicates.IsNotNullPredicate(arg.accept(this, value));
+    case FunctionGenerationHelper.IS_TRUE:
+      return new ParquetPredicates.IsTruePredicate(arg.accept(this, value));
+    case FunctionGenerationHelper.IS_NOT_TRUE:
+      return new ParquetPredicates.IsNotTruePredicate(arg.accept(this, value));
+    case FunctionGenerationHelper.IS_FALSE:
+      return new ParquetPredicates.IsFalsePredicate(arg.accept(this, value));
+    case FunctionGenerationHelper.IS_NOT_FALSE:
+      return new ParquetPredicates.IsNotFalsePredicate(arg.accept(this, value));
+    default:
+      logger.warn("Unhandled IS function. Function name: {}", funcName);
+      return null;
+    }
+  }
+
   private LogicalExpression handleCastFunction(FunctionHolderExpression functionHolderExpression, Set<LogicalExpression> value) {
     for (LogicalExpression arg : functionHolderExpression.args) {
       LogicalExpression newArg = arg.accept(this, value);
@@ -278,6 +321,10 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
     return COMPARE_FUNCTIONS_SET.contains(funcName);
   }
 
+  private static boolean isIsFunction(String funcName) {
+    return IS_FUNCTIONS_SET.contains(funcName);
+  }
+
   private static final ImmutableSet<String> COMPARE_FUNCTIONS_SET;
 
   static {
@@ -289,6 +336,20 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
         .add(FunctionGenerationHelper.LT)
         .add(FunctionGenerationHelper.LE)
         .add(FunctionGenerationHelper.NE)
+        .build();
+  }
+
+  private static final ImmutableSet<String> IS_FUNCTIONS_SET;
+
+  static {
+    ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+    IS_FUNCTIONS_SET = builder
+        .add(FunctionGenerationHelper.IS_NULL)
+        .add(FunctionGenerationHelper.IS_NOT_NULL)
+        .add(FunctionGenerationHelper.IS_TRUE)
+        .add(FunctionGenerationHelper.IS_NOT_TRUE)
+        .add(FunctionGenerationHelper.IS_FALSE)
+        .add(FunctionGenerationHelper.IS_NOT_FALSE)
         .build();
   }
 
