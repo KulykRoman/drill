@@ -96,7 +96,7 @@ public abstract  class ParquetPredicates {
     public boolean canDrop(RangeExprEvaluator evaluator) {
       // "and" : as long as one branch is OK to drop, we can drop it.
       for (LogicalExpression child : this) {
-        if (((ParquetFilterPredicate) child).canDrop(evaluator)) {
+        if (child instanceof ParquetFilterPredicate && ((ParquetFilterPredicate) child).canDrop(evaluator)) {
           return true;
         }
       }
@@ -146,8 +146,7 @@ public abstract  class ParquetPredicates {
     public boolean canDrop(RangeExprEvaluator evaluator) {
       Statistics exprStat = expr.accept(evaluator, null);
 
-      if (exprStat == null ||
-          exprStat.isEmpty()) {
+      if (exprStat == null) {
         return false;
       }
 

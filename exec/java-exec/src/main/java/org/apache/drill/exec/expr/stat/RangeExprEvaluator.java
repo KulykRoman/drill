@@ -74,9 +74,8 @@ public class RangeExprEvaluator extends AbstractExprVisitor<Statistics, Void, Ru
       final ColumnStatistics columnStatistics = columnStatMap.get(fieldExpr.getPath());
       if (columnStatistics != null) {
         return columnStatistics.getStatistics();
-      } else {
+      } else if (fieldExpr.getMajorType().equals(Types.OPTIONAL_INT)) {
         // field does not exist.
-        Preconditions.checkArgument(fieldExpr.getMajorType().equals(Types.OPTIONAL_INT));
         IntStatistics intStatistics = new IntStatistics();
         intStatistics.setNumNulls(rowCount); // all values are nulls
         return intStatistics;

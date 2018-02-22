@@ -188,7 +188,7 @@ public class ParquetFilterBuilder extends AbstractExprVisitor<LogicalExpression,
     case TIME:
       return ValueExpressions.getTime(((TimeHolder) holder).value);
     case BIT:
-      return ValueExpressions.getBit(((BitHolder) holder).value == 0);
+      return ValueExpressions.getBit(((BitHolder) holder).value == 1);
     default:
       return null;
     }
